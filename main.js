@@ -153,7 +153,7 @@
     body.scrollTop = body.scrollHeight;
   };
   const echo = (cmd) => {
-    const p = el("p", { class: "cmd-echo" }, el("span", { class: "p", text: "alen@yerevan:~$ " }), cmd);
+    const p = el("p", { class: "cmd-echo" }, el("span", { class: "p", text: "alen@earth:~$ " }), cmd);
     out.append(p);
   };
 
