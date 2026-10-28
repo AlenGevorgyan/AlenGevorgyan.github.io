@@ -119,7 +119,9 @@ main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 40px; }
 #term-out .err { color: var(--red); }
 #term-out .hl { color: var(--accent); }
 .term-line { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
-.prompt { color: var(--accent); white-space: nowrap; }
+.prompt { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
+#term-out .fs-dir { color: var(--accent); font-weight: 600; }
+#term-out .fs-exec { color: var(--ok); font-weight: 600; }
 #term-input {
   flex: 1; min-width: 0; background: transparent; border: 0; outline: none;
   color: var(--text); font: inherit; caret-color: var(--accent);

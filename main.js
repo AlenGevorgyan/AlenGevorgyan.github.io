@@ -13,12 +13,21 @@
       "entries": (n) => `${n} entries`, "all": "*all", "featured": "FEATURED", "source": "[source ↗]",
       "reader.close": "close ×", "foot.hint": "try typing help in the terminal",
       "boot": ["mounting /home/alen", "loading models: arsen, ocarm", "connecting to github.com/AlenGevorgyan"],
-      "boot.ready": "ready. type 'help' to see commands.",
+      "boot.ready": "ready. type 'help' for commands, or try: cd projects",
       "help": [
+        ["ls [dir]", "list files"], ["cd <dir>", "change folder (cd projects, cd ..)"],
+        ["cat <file>", "print a file (cat README.txt)"], ["./open.sh", "inside a project: open it on GitHub"],
+        ["pwd", "current folder"], ["tree", "show all folders"],
         ["whoami", "who I am"], ["about", "short bio"], ["projects", "list projects"],
         ["log", "achievements and experience"], ["blog", "latest posts"], ["contact", "links"],
         ["lang en|hy", "switch language"], ["clear", "clear the screen"],
       ],
+      "fs.runhint": "run ./open.sh to open this project.",
+      "fs.opening": (name, url) => `opening ${name} → ${url}`,
+      "fs.nofile": (cmd, p) => `${cmd}: ${p}: no such file or directory`,
+      "fs.notdir": (p) => `cd: ${p}: not a directory`,
+      "fs.isdir": (cmd, p) => `${cmd}: ${p}: is a directory`,
+      "fs.noexec": (p) => `sh: ${p}: permission denied (try cat)`,
       "notfound": (c) => `command not found: ${c}. try 'help'`,
       "sudo": "nice try. permission denied.",
       "open": (t) => `opening ${t}…`,
@@ -32,12 +41,21 @@
       "entries": (n) => `${n} գրառում`, "all": "*բոլորը", "featured": "ԸՆՏՐՎԱԾ", "source": "[կոդ ↗]",
       "reader.close": "փակել ×", "foot.hint": "տերմինալում գրիր help",
       "boot": ["միացնում ենք /home/alen", "բեռնում ենք մոդելները՝ arsen, ocarm", "կապ github.com/AlenGevorgyan-ի հետ"],
-      "boot.ready": "պատրաստ է։ գրիր 'help' հրամանները տեսնելու համար։",
+      "boot.ready": "պատրաստ է։ գրիր 'help' կամ փորձիր՝ cd projects",
       "help": [
+        ["ls [dir]", "ֆայլերի ցանկ"], ["cd <dir>", "փոխել պանակը (cd projects, cd ..)"],
+        ["cat <file>", "ցույց տալ ֆայլը (cat README.txt)"], ["./open.sh", "նախագծի ներսում՝ բացել GitHub-ում"],
+        ["pwd", "ընթացիկ պանակը"], ["tree", "բոլոր պանակները"],
         ["whoami", "ով եմ ես"], ["about", "կարճ կենսագրություն"], ["projects", "նախագծերի ցանկ"],
         ["log", "նվաճումներ և փորձ"], ["blog", "վերջին գրառումները"], ["contact", "հղումներ"],
         ["lang en|hy", "փոխել լեզուն"], ["clear", "մաքրել էկրանը"],
       ],
+      "fs.runhint": "գործարկիր ./open.sh՝ նախագիծը բացելու համար։",
+      "fs.opening": (name, url) => `բացում ենք ${name} → ${url}`,
+      "fs.nofile": (cmd, p) => `${cmd}: ${p}: նման ֆայլ կամ պանակ չկա`,
+      "fs.notdir": (p) => `cd: ${p}: պանակ չէ`,
+      "fs.isdir": (cmd, p) => `${cmd}: ${p}: պանակ է`,
+      "fs.noexec": (p) => `sh: ${p}: թույլտվություն չկա (փորձիր cat)`,
       "notfound": (c) => `հրամանը չի գտնվել՝ ${c}։ փորձիր 'help'`,
       "sudo": "լավ փորձ էր։ մուտքն արգելված է։",
       "open": (t) => `բացում ենք ${t}…`,
@@ -152,8 +170,70 @@
     out.append(el("p", { class: cls || "", text }));
     body.scrollTop = body.scrollHeight;
   };
+  const printNodes = (...nodes) => {
+    out.append(el("p", {}, ...nodes));
+    body.scrollTop = body.scrollHeight;
+  };
+
+  // ---- virtual file system: ~/about.txt, ~/projects/<id>/{README.txt,open.sh}, ~/log, ~/blog
+  let cwd = [];
+  const pathStr = (parts) => "~" + parts.map((p) => "/" + p).join("");
+  const promptStr = () => `alen@earth:${pathStr(cwd)}$`;
+  const updatePrompt = () => { $("#term-form .prompt").textContent = promptStr(); };
+
+  const dir = (children) => ({ type: "dir", children });
+  const file = (lines) => ({ type: "file", lines });
+  const exec = (url, label) => ({ type: "exec", url, label });
+
+  function buildFS() {
+    const projects = {};
+    for (const p of S.projects) {
+      const lines = [p.title, "=".repeat(p.title.length), "", L(p.desc), "", `tags:   ${p.tags.map((x) => "#" + x).join(" ")}`];
+      if (p.source) lines.push(`source: ${p.source}`);
+      if (p.live) lines.push(`live:   ${p.live}`);
+      lines.push("", t("fs.runhint"));
+      projects[p.id] = dir({ "README.txt": file(lines), "open.sh": exec(p.live || p.source, p.title) });
+    }
+    const posts = {};
+    for (const p of S.posts) posts[`${p.id}.md`] = file([`# ${L(p.title)}`, p.date, "", ...L(p.body)]);
+    return dir({
+      "about.txt": file(L(S.about)),
+      "contact.txt": file(S.links.map((l) => `${l.label.padEnd(10)} ${l.url}`)),
+      projects: dir(projects),
+      log: dir({ "achievements.log": file(S.log.map((e) => `${e.year} [${e.level}] ${L(e.text)}`)) }),
+      blog: dir(posts),
+    });
+  }
+
+  // Resolve a path string against cwd. Returns { node, parts } or null.
+  function resolve(path) {
+    let parts = path === "~" || path.startsWith("~/") || path.startsWith("/") ? [] : [...cwd];
+    for (const seg of path.replace(/^~\/?|^\//, "").split("/")) {
+      if (!seg || seg === ".") continue;
+      if (seg === "..") { parts.pop(); continue; }
+      parts.push(seg);
+    }
+    let node = buildFS();
+    for (const seg of parts) {
+      node = node.type === "dir" ? node.children[seg] : null;
+      if (!node) return null;
+    }
+    return { node, parts };
+  }
+
+  const nameNode = (name, node) => {
+    if (node.type === "dir") return el("span", { class: "fs-dir", text: name + "/" });
+    if (node.type === "exec") return el("span", { class: "fs-exec", text: name + "*" });
+    return el("span", { text: name });
+  };
+
+  function runExec(node) {
+    print(t("fs.opening")(node.label, node.url), "sys");
+    window.open(node.url, "_blank", "noopener");
+  }
+
   const echo = (cmd) => {
-    const p = el("p", { class: "cmd-echo" }, el("span", { class: "p", text: "alen@earth:~$ " }), cmd);
+    const p = el("p", { class: "cmd-echo" }, el("span", { class: "p", text: promptStr() + " " }), cmd);
     out.append(p);
   };
 
@@ -161,7 +241,46 @@
 
   const COMMANDS = {
     help() {
-      t("help").forEach(([c, d]) => print(`  ${c.padEnd(12)} ${d}`));
+      t("help").forEach(([c, d]) => print(`  ${c.padEnd(14)} ${d}`));
+    },
+    ls(path = ".") {
+      const r = resolve(path);
+      if (!r) return print(t("fs.nofile")("ls", path), "err");
+      if (r.node.type !== "dir") return printNodes(nameNode(r.parts.at(-1), r.node));
+      const names = Object.keys(r.node.children);
+      const nodes = [];
+      names.forEach((n, i) => { if (i) nodes.push("  "); nodes.push(nameNode(n, r.node.children[n])); });
+      printNodes(...nodes);
+    },
+    cd(path = "~") {
+      const r = resolve(path);
+      if (!r) return print(t("fs.nofile")("cd", path), "err");
+      if (r.node.type !== "dir") return print(t("fs.notdir")(path), "err");
+      cwd = r.parts;
+      updatePrompt();
+    },
+    pwd() { print(`/home/alen${cwd.map((p) => "/" + p).join("")}`); },
+    cat(path) {
+      if (!path) return print("usage: cat <file>", "err");
+      const r = resolve(path);
+      if (!r) return print(t("fs.nofile")("cat", path), "err");
+      if (r.node.type === "dir") return print(t("fs.isdir")("cat", path), "err");
+      if (r.node.type === "exec") return print(`#!/bin/sh\nxdg-open ${r.node.url}`);
+      r.node.lines.forEach((l) => print(l));
+    },
+    tree() {
+      const walk = (node, prefix) => {
+        const names = Object.keys(node.children);
+        names.forEach((n, i) => {
+          const last = i === names.length - 1;
+          const child = node.children[n];
+          printNodes(prefix + (last ? "└── " : "├── "), nameNode(n, child));
+          if (child.type === "dir") walk(child, prefix + (last ? "    " : "│   "));
+        });
+      };
+      const r = resolve(".");
+      print(pathStr(cwd));
+      walk(r.node, "");
     },
     whoami() {
       print(`${L(S.name)} — ${L(S.role)}`, "hl");
@@ -187,16 +306,50 @@
     },
     clear() { out.replaceChildren(); },
     sudo() { print(t("sudo"), "err"); },
-    ls() { print("about.txt  projects/  log/  blog/"); },
   };
 
   function run(line) {
     const [cmd, ...args] = line.trim().split(/\s+/);
     if (!cmd) return;
     echo(line);
-    const fn = COMMANDS[cmd.toLowerCase()];
-    if (fn) fn(...args); else print(t("notfound")(cmd), "err");
+    // ./open.sh, projects/ocarm/open.sh, ~/projects/ocarm/open.sh
+    if (cmd.includes("/")) {
+      const r = resolve(cmd);
+      if (!r) print(t("fs.nofile")("sh", cmd), "err");
+      else if (r.node.type === "exec") runExec(r.node);
+      else if (r.node.type === "dir") print(t("fs.isdir")("sh", cmd), "err");
+      else print(t("fs.noexec")(cmd), "err");
+    } else {
+      const fn = COMMANDS[cmd.toLowerCase()];
+      if (fn) fn(...args); else print(t("notfound")(cmd), "err");
+    }
     body.scrollTop = body.scrollHeight;
+  }
+
+  // Tab completes the last word against commands or file names.
+  function complete() {
+    const v = input.value;
+    const words = v.split(/\s+/);
+    const last = words.at(-1);
+    let options;
+    if (words.length === 1 && !last.includes("/")) {
+      options = Object.keys(COMMANDS).filter((c) => c.startsWith(last));
+    } else {
+      const slash = last.lastIndexOf("/");
+      const base = slash >= 0 ? last.slice(0, slash + 1) : "";
+      const r = resolve(base || ".");
+      if (!r || r.node.type !== "dir") return;
+      options = Object.entries(r.node.children)
+        .filter(([n]) => n.startsWith(last.slice(slash + 1)))
+        .map(([n, node]) => base + n + (node.type === "dir" ? "/" : ""));
+    }
+    if (options.length === 1) {
+      words[words.length - 1] = options[0];
+      input.value = words.join(" ") + (options[0].endsWith("/") ? "" : " ");
+    } else if (options.length > 1) {
+      echo(v);
+      print(options.join("  "));
+    }
   }
 
   form.addEventListener("submit", (e) => {
@@ -209,6 +362,7 @@
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowUp" && hIdx > 0) { input.value = history[--hIdx]; e.preventDefault(); }
     if (e.key === "ArrowDown") { hIdx = Math.min(history.length, hIdx + 1); input.value = history[hIdx] || ""; }
+    if (e.key === "Tab") { e.preventDefault(); complete(); }
   });
   body.addEventListener("click", () => { if (!form.hidden && !getSelection().toString()) input.focus({ preventScroll: true }); });
 
