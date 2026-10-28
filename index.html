@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alen Gevorgyan // AI & Software</title>
+  <meta name="description" content="Alen Gevorgyan: high-school student in Yerevan building AI tools for Armenian Sign Language and handwritten Armenian OCR.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+Armenian:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#home"><span class="u">alen</span>@<span class="h">yerevan</span>:~$<span class="cursor"></span></a>
+    <nav class="nav">
+      <a href="#home" data-nav="home" data-i18n="nav.home">home</a>
+      <a href="#projects" data-nav="projects" data-i18n="nav.projects">projects</a>
+      <a href="#log" data-nav="log" data-i18n="nav.log">log</a>
+      <a href="#blog" data-nav="blog" data-i18n="nav.blog">blog</a>
+    </nav>
+    <div class="chips">
+      <span class="chip"><span class="dot"></span><span data-i18n="chip.online">ONLINE</span></span>
+      <span class="chip mono" id="clock-chip">--:--:--</span>
+      <button class="chip lang" id="lang-toggle" type="button" aria-label="Switch language">
+        <span data-lang="hy">ՀԱՅ</span> / <span data-lang="en">EN</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div class="win term">
+        <div class="win-bar">
+          <span class="lights"><i></i><i></i><i></i></span>
+          <span class="win-title">alen@yerevan: ~</span>
+          <button class="skip" id="skip-boot" type="button" data-i18n="term.skip">skip »</button>
+        </div>
+        <div class="term-body" id="term-body" tabindex="-1">
+          <div id="term-out" aria-live="polite"></div>
+          <form id="term-form" class="term-line" hidden autocomplete="off">
+            <label for="term-input" class="prompt">alen@yerevan:~$</label>
+            <input id="term-input" spellcheck="false" autocapitalize="off" aria-label="Terminal command">
+          </form>
+        </div>
+      </div>
+
+      <aside class="win info">
+        <div class="win-bar">
+          <span class="lights"><i></i><i></i><i></i></span>
+          <span class="win-title">sys.info</span>
+        </div>
+        <div class="info-body">
+          <h1 class="name" data-c="name"></h1>
+          <p class="role">&gt; <span data-c="role"></span></p>
+          <p class="tagline" data-c="tagline"></p>
+          <dl class="kv">
+            <div><dt data-i18n="info.status">status</dt><dd><span class="dot"></span><span data-c="status"></span></dd></div>
+            <div><dt data-i18n="info.location">location</dt><dd data-c="location"></dd></div>
+            <div><dt data-i18n="info.projects">projects</dt><dd id="count-projects"></dd></div>
+            <div><dt data-i18n="info.posts">posts</dt><dd id="count-posts"></dd></div>
+            <div><dt data-i18n="info.time">local time</dt><dd class="mono" id="local-time"></dd></div>
+          </dl>
+          <div class="links" id="links"></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="block" id="about">
+      <h2 class="cmd"><span class="path">~</span> $ cat about.txt</h2>
+      <div class="win pad about" id="about-text"></div>
+    </section>
+
+    <section class="block" id="projects">
+      <div class="block-head">
+        <h2 class="cmd"><span class="path">~/projects</span> $ ls -la</h2>
+        <span class="muted" id="entries"></span>
+      </div>
+      <div class="filters" id="filters"></div>
+      <label class="grep">
+        <span>grep</span>
+        <input id="grep" type="search" data-i18n-ph="grep.ph" placeholder="search projects…">
+      </label>
+      <div class="grid" id="project-grid"></div>
+      <p class="muted empty" id="no-match" hidden data-i18n="grep.none">no matches.</p>
+    </section>
+
+    <section class="block" id="log">
+      <h2 class="cmd"><span class="path">~/log</span> $ cat achievements.log</h2>
+      <ol class="win pad logfile" id="logfile"></ol>
+    </section>
+
+    <section class="block" id="blog">
+      <h2 class="cmd"><span class="path">~/blog</span> $ ls posts/</h2>
+      <div class="posts" id="post-list"></div>
+    </section>
+  </main>
+
+  <div class="reader" id="reader" hidden>
+    <article class="win reader-win" role="dialog" aria-modal="true" aria-labelledby="reader-title">
+      <div class="win-bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="win-title" id="reader-file"></span>
+        <a class="skip" href="#blog" data-i18n="reader.close">close ×</a>
+      </div>
+      <div class="pad">
+        <p class="muted mono" id="reader-date"></p>
+        <h3 id="reader-title"></h3>
+        <div id="reader-body"></div>
+      </div>
+    </article>
+  </div>
+
+  <footer class="foot">
+    <span>© <span id="year"></span> <span data-c="name"></span></span>
+    <span class="muted">built with plain HTML, CSS & JS · <span data-i18n="foot.hint">try typing help in the terminal</span></span>
+  </footer>
+
+  <script src="content.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
