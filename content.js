@@ -12,12 +12,11 @@ window.SITE = {
   location: { en: "Earth, Solar System", hy: "Երկիր, Արեգակնային համակարգ" },
   timezone: "Asia/Yerevan",
 
-  // TODO (Alen): add your email, LinkedIn and Telegram, or delete the lines you don't want.
   links: [
     { label: "github", url: "https://github.com/AlenGevorgyan" },
-    // { label: "email", url: "mailto:you@example.com" },
-    // { label: "linkedin", url: "https://www.linkedin.com/in/your-name" },
-    // { label: "telegram", url: "https://t.me/your-name" },
+    { label: "linkedin", url: "https://www.linkedin.com/in/alen-gevorgyan-b98051310/" },
+    { label: "email", url: "mailto:alengevorgyan2009@gmail.com" },
+    { label: "telegram", url: "https://t.me/MamanTsaxkaman" },
   ],
 
   about: {
